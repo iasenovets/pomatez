@@ -21,6 +21,19 @@ contextBridge.exposeInMainWorld("electron", {
   },
   saveHistoryJsonl: (filename: string, contents: string) =>
     ipcRenderer.invoke("save-history-jsonl", filename, contents),
+  chooseHistoryExportDirectory: () =>
+    ipcRenderer.invoke("choose-history-export-directory"),
+  writeAutomaticHistoryExport: (
+    directory: string,
+    filename: string,
+    contents: string
+  ) =>
+    ipcRenderer.invoke(
+      "write-automatic-history-export",
+      directory,
+      filename,
+      contents
+    ),
   onHistoryPower: (callback: (suspended: boolean) => void) => {
     const listener = (
       _event: Electron.IpcRendererEvent,

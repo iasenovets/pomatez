@@ -10,6 +10,7 @@ import { Range } from "../../features/sessionHistory/summary";
 import { makeExport } from "../../features/sessionHistory/export";
 import { saveExport } from "../../features/sessionHistory/saveExport";
 import HistoryReport from "./HistoryReport";
+import AutomaticExportControls from "./AutomaticExportControls";
 import { ReportState } from "./HistoryReport";
 import "./statistics.css";
 
@@ -265,6 +266,7 @@ export default function Statistics() {
         </p>
       )}
       <HistoryReport state={state} zone={zone} retry={refresh} />
+      <AutomaticExportControls />
     </StyledSettings>
   );
 }

@@ -13,10 +13,12 @@ import {
 import {
   saveHistoryExport,
   validExportRequest,
+  writeAutomaticExport,
 } from "./helpers/historyExport";
 import debounce from "lodash.debounce";
 import notifier from "node-notifier";
 import path from "path";
+import { realpath } from "fs/promises";
 import {
   SET_ALWAYS_ON_TOP,
   SET_FULLSCREEN_BREAK,
@@ -469,6 +471,56 @@ ipcMain.handle(
         }),
       contents
     );
+  }
+);
+
+ipcMain.handle("choose-history-export-directory", async (event) => {
+  const parent = win;
+  if (
+    !parent ||
+    event.sender !== parent.webContents ||
+    event.senderFrame !== event.sender.mainFrame
+  ) {
+    throw new Error("Invalid history export request");
+  }
+  const selection = await dialog.showOpenDialog(parent, {
+    title: "Choose automatic session export folder",
+    properties: ["openDirectory", "createDirectory"],
+  });
+  if (selection.canceled || !selection.filePaths[0]) return null;
+
+  const directory = await realpath(selection.filePaths[0]);
+  store.safeSet("historyExportDirectory", directory);
+  if (store.safeGet("historyExportDirectory") !== directory) {
+    throw new Error("Could not save the automatic export directory");
+  }
+  return directory;
+});
+
+ipcMain.handle(
+  "write-automatic-history-export",
+  async (
+    event,
+    directory: unknown,
+    filename: unknown,
+    contents: unknown
+  ) => {
+    const parent = win;
+    const allowedDirectory = store.safeGet("historyExportDirectory");
+    if (
+      !parent ||
+      event.sender !== parent.webContents ||
+      event.senderFrame !== event.sender.mainFrame ||
+      typeof directory !== "string" ||
+      directory !== allowedDirectory ||
+      !path.isAbsolute(directory)
+    ) {
+      throw new Error("Choose the automatic export directory again");
+    }
+    if ((await realpath(directory)) !== directory) {
+      throw new Error("The automatic export directory has changed");
+    }
+    return writeAutomaticExport(directory, filename, contents);
   }
 );
 

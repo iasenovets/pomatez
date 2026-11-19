@@ -1,12 +1,20 @@
 import { strict as assert } from "node:assert";
+import { createHash } from "node:crypto";
 import { test } from "node:test";
-import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
+import {
+  mkdtemp,
+  readFile,
+  readdir,
+  rm,
+  symlink,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   saveHistoryExport,
   validExportRequest,
   writeNewExport,
+  writeAutomaticExport,
 } from "../../app/electron/src/helpers/historyExport.ts";
 
 test("save cancellation, interrupted write and existing destination preserve data", async (t) => {
@@ -48,4 +56,55 @@ test("save cancellation, interrupted write and existing destination preserve dat
   );
   assert.equal(await readFile(destination, "utf8"), contents);
   assert.deepEqual(await readdir(dir), ["history.jsonl"]);
+});
+
+test("automatic export is idempotent and preserves a colliding file", async (t) => {
+  const dir = await mkdtemp(join(tmpdir(), "pomatez-auto-export-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const contents = '{"record_type":"export_header"}\n';
+  const name = `pomatez-auto-${createHash("sha256")
+    .update(contents)
+    .digest("hex")}.jsonl`;
+
+  const results = await Promise.all([
+    writeAutomaticExport(dir, name, contents),
+    writeAutomaticExport(dir, name, contents),
+  ]);
+  assert.deepEqual(results.sort(), ["saved", "unchanged"]);
+  assert.deepEqual(await readdir(dir), [name]);
+
+  await rm(join(dir, name));
+  await writeNewExport(join(dir, name), "unrelated data");
+  await assert.rejects(
+    writeAutomaticExport(dir, name, contents),
+    /already exists/
+  );
+  assert.equal(
+    await readFile(join(dir, name), "utf8"),
+    "unrelated data"
+  );
+  assert.deepEqual(await readdir(dir), [name]);
+  await assert.rejects(
+    writeAutomaticExport(join(dir, "missing"), name, contents),
+    { code: "ENOENT" }
+  );
+  await assert.rejects(
+    writeAutomaticExport(".", name, contents),
+    /Invalid automatic/
+  );
+  await assert.rejects(
+    writeAutomaticExport(dir, "../" + name, contents),
+    /Invalid automatic/
+  );
+  if (process.platform !== "win32") {
+    await rm(join(dir, name));
+    const target = join(dir, "other.jsonl");
+    await writeNewExport(target, contents);
+    await symlink(target, join(dir, name));
+    await assert.rejects(
+      writeAutomaticExport(dir, name, contents),
+      /already exists/
+    );
+    assert.equal(await readFile(target, "utf8"), contents);
+  }
 });

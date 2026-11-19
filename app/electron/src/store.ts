@@ -9,6 +9,7 @@ type StoreProps = {
   useNativeTitlebar?: boolean;
   compactMode?: boolean;
   openAtLogin?: boolean;
+  historyExportDirectory?: string;
 };
 
 /**

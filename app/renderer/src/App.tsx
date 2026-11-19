@@ -9,6 +9,7 @@ import { Layout, Preloader } from "components";
 import { compactRoutes, routes } from "config";
 import { useLanguageSync } from "hooks";
 import { useAppSelector } from "hooks/storeHooks";
+import { AutomaticExportProvider } from "./features/sessionHistory/AutomaticExportProvider";
 
 export default function App() {
   const settings = useAppSelector((state) => state.settings);
@@ -48,35 +49,37 @@ export default function App() {
     <ThemeProvider>
       <CounterProvider>
         <ConnectorProvider>
-          <Router>
-            <Layout>
-              <Suspense fallback={<Preloader />}>
-                <Switch>
-                  {settings["compactMode"]
-                    ? compactRoutes.map(
-                        ({ exact, path, component }, index) => (
-                          <Route
-                            exact={exact}
-                            path={path}
-                            component={component}
-                            key={index}
-                          />
+          <AutomaticExportProvider>
+            <Router>
+              <Layout>
+                <Suspense fallback={<Preloader />}>
+                  <Switch>
+                    {settings["compactMode"]
+                      ? compactRoutes.map(
+                          ({ exact, path, component }, index) => (
+                            <Route
+                              exact={exact}
+                              path={path}
+                              component={component}
+                              key={index}
+                            />
+                          )
                         )
-                      )
-                    : routes().map(
-                        ({ exact, path, component }, index) => (
-                          <Route
-                            exact={exact}
-                            path={path}
-                            component={component}
-                            key={index}
-                          />
-                        )
-                      )}
-                </Switch>
-              </Suspense>
-            </Layout>
-          </Router>
+                      : routes().map(
+                          ({ exact, path, component }, index) => (
+                            <Route
+                              exact={exact}
+                              path={path}
+                              component={component}
+                              key={index}
+                            />
+                          )
+                        )}
+                  </Switch>
+                </Suspense>
+              </Layout>
+            </Router>
+          </AutomaticExportProvider>
         </ConnectorProvider>
       </CounterProvider>
     </ThemeProvider>

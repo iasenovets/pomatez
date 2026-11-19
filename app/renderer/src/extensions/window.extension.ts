@@ -3,6 +3,12 @@ import Electron from "electron";
 declare global {
   interface Window {
     electron: {
+      chooseHistoryExportDirectory?: () => Promise<string | null>;
+      writeAutomaticHistoryExport?: (
+        directory: string,
+        filename: string,
+        contents: string
+      ) => Promise<"saved" | "unchanged">;
       saveHistoryJsonl?: (
         filename: string,
         contents: string

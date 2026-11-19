@@ -246,7 +246,9 @@ impl PomatezCommands for Builder<Wry> {
             minimize_window,
             updater::check_for_updates,
             updater::install_update,
-            crate::history_export::save_history_jsonl
+            crate::history_export::save_history_jsonl,
+            crate::history_export::choose_history_export_directory,
+            crate::history_export::write_automatic_history_export
         ])
     }
 

@@ -38,6 +38,7 @@ pub fn run() {
 
     #[cfg(desktop)]
     {
+        builder = builder.plugin(tauri_plugin_dialog::init());
         if updater_enabled {
             builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
         }
